@@ -4,7 +4,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 import pandas as pd
 from datetime import datetime, timedelta
-import pytz 
+# import pytz 
 import ta
 import currencyapicom
 
@@ -26,13 +26,17 @@ def process_data(data,time_zone="US/Eastern",currency="USD"):
     data=data.reset_index()
     data=data.rename(columns={'Date':'Datetime'})
     if (currency!="USD"):
-        client = currencyapicom.Client('cur_live_VSWJyndJL2fYsXbxYk2E8i3WKDYLtHq7nmLR0yKc')
-        result = client.latest('USD',currencies=[currency])
-        exchange = result['data'][currency]['value']
-        data['Close']=data['Close']*exchange
-        data['High']=data['High']*exchange
-        data['Low']=data['Low']*exchange
-        data['Volume']=data['Volume']*exchange
+        # client = currencyapicom.Client('cur_live_VSWJyndJL2fYsXbxYk2E8i3WKDYLtHq7nmLR0yKc')
+        # result = client.latest('USD',currencies=[currency])
+        # exchange = result['data'][currency]['value']
+        # data['Close']=data['Close']*exchange
+        # data['High']=data['High']*exchange
+        # data['Low']=data['Low']*exchange
+        # data['Volume']=data['Volume']*exchange
+        st.error(f"API LIMIT FOR CURRENCY EXCHANGE EXCEEDED TRY NEXT MONTH")
+    
+    else:
+         st.error(f"API LIMIT FOR CURRENCY EXCHANGE EXCEEDED TRY NEXT MONTH")
         
     return data
 
