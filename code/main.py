@@ -8,6 +8,7 @@ from datetime import datetime, timedelta
 import ta
 import currencyapicom
 
+
 def fetch_data(ticker, period, interval):
     if period=='1wk':
         end_date=datetime.now()
@@ -18,29 +19,31 @@ def fetch_data(ticker, period, interval):
     return data
 
 
-
 def process_data(data,time_zone="US/Eastern",currency="USD"):
+
     if data.index.tzinfo is None:
         data.index=data.index.tz_localize('UTC')
     data.index = data.index.tz_convert(time_zone)
     data=data.reset_index()
     data=data.rename(columns={'Date':'Datetime'})
+
     if (currency!="USD"):
-        # client = currencyapicom.Client('cur_live_VSWJyndJL2fYsXbxYk2E8i3WKDYLtHq7nmLR0yKc')
-        # result = client.latest('USD',currencies=[currency])
-        # exchange = result['data'][currency]['value']
-        # data['Close']=data['Close']*exchange
-        # data['High']=data['High']*exchange
-        # data['Low']=data['Low']*exchange
-        # data['Volume']=data['Volume']*exchange
-        st.error(f"API LIMIT FOR CURRENCY EXCHANGE EXCEEDED TRY NEXT MONTH")
-    
+        client = currencyapicom.Client('cur_live_VSWJyndJL2fYsXbxYk2E8i3WKDYLtHq7nmLR0yKc')
+        result = client.latest('USD',currencies=[currency])
+        exchange = result['data'][currency]['value']
+        data['Close']=data['Close']*exchange
+        data['High']=data['High']*exchange
+        data['Low']=data['Low']*exchange
+        data['Volume']=data['Volume']*exchange
     else:
-         st.error(f"API LIMIT FOR CURRENCY EXCHANGE EXCEEDED TRY NEXT MONTH")
-        
-    return data
+        st.error(f"API LIMIT FOR CURRENCY EXCHANGE EXCEEDED TRY NEXT MONTH (300 API Requests / month)")
+        currency="USD"
+
+    return data,currency
+
 
 def metrics(data):
+
     last_close = data['Close'].iloc[-1]
     prev_close = data['Close'].iloc[0]
     change = last_close-prev_close
@@ -48,13 +51,15 @@ def metrics(data):
     high = data['High'].max()
     low = data['Low'].min()
     volume= data['Volume'].sum()
+
     return last_close, prev_close, change, pct_change, high, low, volume
+
 
 def ta_indicators(data):
     data['SMA_20']=ta.trend.sma_indicator(data['Close'],window=20)
     data['EMA_20']=ta.trend.ema_indicator(data['Close'],window=20)
-    return data
 
+    return data
 
 
 interval_map={
@@ -64,6 +69,7 @@ interval_map={
     '1y':'1wk',
     'max':'1wk',    
 }
+
 
 currencies = [('US Dollar', 'USD'),
 ('Pound Sterling', 'GBP'),
@@ -115,6 +121,7 @@ currencies = [('US Dollar', 'USD'),
 st.set_page_config(layout='wide')
 st.title("Real Time Stock DashBoard")
 
+
 st.sidebar.header("Parameters")
 ticker = st.sidebar.text_input('Ticker', 'MSFT')
 time_zone = st.sidebar.text_input('Time Zone', 'US/Eastern')
@@ -126,7 +133,7 @@ currency_name, currency_code = st.sidebar.selectbox('Currency', currencies)
 
 if st.sidebar.button('Update'):
     data=fetch_data(ticker,time_period,interval_map[time_period])
-    data=process_data(data,time_zone,currency_code)
+    data,currency_code=process_data(data,time_zone,currency_code)
     data=ta_indicators(data)
 
     last_close, prev_close, change, pct_change, high, low, volume=metrics(data)
@@ -139,20 +146,24 @@ if st.sidebar.button('Update'):
     col3.metric("Volume", f"{volume:.2f} {currency_code}")
 
     fig = go.Figure()
+
     if chart_type == 'Candlestick':
         fig.add_trace(go.Candlestick(x=data['Datetime'],
                                      open=data['Open'],
                                      high=data['High'],
                                      low=data['Low'],
                                      close=data['Close']))
+
     else:
         fig = px.line(data, x = 'Datetime', y='Close')
     
+
     for indicator in indicators:
         if indicator=='SMA 20':
             fig.add_trace(go.Scatter(x=data['Datetime'],y=data['SMA_20'], name='SMA 20'))
         else:
             fig.add_trace(go.Scatter(x=data['Datetime'],y=data['EMA_20'], name='EMA 20'))
+
 
     fig.update_layout(title=f"{ticker} {time_period.upper()} Chart",
                       xaxis_title='Time',
@@ -168,10 +179,11 @@ if st.sidebar.button('Update'):
 
     st.sidebar.header("Real-Time Stock Prices")
     stocks=['AAPL','GOOGL','AMZN','ADBE']
+
     for stock in stocks:
         data=fetch_data(stock,'1d','1m')
         if data is not None:
-            data=process_data(data,time_zone,currency_code)
+            data,currency_code=process_data(data,time_zone,currency_code)
             last_price=data['Close'].iloc[-1]
             prev_price=data['Close'].iloc[0]
             change=last_price-prev_price
