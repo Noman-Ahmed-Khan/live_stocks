@@ -28,16 +28,17 @@ def process_data(data,time_zone="US/Eastern",currency="USD"):
     data=data.rename(columns={'Date':'Datetime'})
 
     if (currency!="USD"):
-        client = currencyapicom.Client('cur_live_VSWJyndJL2fYsXbxYk2E8i3WKDYLtHq7nmLR0yKc')
-        result = client.latest('USD',currencies=[currency])
-        exchange = result['data'][currency]['value']
-        data['Close']=data['Close']*exchange
-        data['High']=data['High']*exchange
-        data['Low']=data['Low']*exchange
-        data['Volume']=data['Volume']*exchange
-    else:
-        st.error(f"API LIMIT FOR CURRENCY EXCHANGE EXCEEDED TRY NEXT MONTH (300 API Requests / month)")
-        currency="USD"
+        try:
+            client = currencyapicom.Client('cur_live_VSWJyndJL2fYsXbxYk2E8i3WKDYLtHq7nmLR0yKc')
+            result = client.latest('USD', currencies=[currency])
+            exchange = result['data'][currency]['value']
+            data['Close'] = data['Close'] * exchange
+            data['High'] = data['High'] * exchange
+            data['Low'] = data['Low'] * exchange
+            data['Volume'] = data['Volume'] * exchange
+        except Exception as e:
+            st.error(f"Failed to fetch currency conversion data: {str(e)}")
+            currency = "USD"
 
     return data,currency
 
