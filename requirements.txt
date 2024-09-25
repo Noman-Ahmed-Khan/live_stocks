@@ -1,4 +1,4 @@
-forex-python==1.5.1
+currencyapicom==1.x.x 
 pandas==1.5.3
 plotly==5.10.0
 requests==2.28.1
